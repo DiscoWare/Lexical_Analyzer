@@ -196,5 +196,11 @@ void processFile(string fileName)
     in.close();
     output.close();
 
+    #ifdef linux
     system("cat output.txt");
+    #endif
+
+    #ifdef _WIN32
+    system("type output.txt");
+    #endif
 }
