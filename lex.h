@@ -28,6 +28,7 @@ size_t currentState = 0;
 vector<string> keywords = {"int", "float", "bool", "if", "else", "then", "endif", 
                            "while", "whileend", "do", "doend", "for", "forend", 
                            "input", "output", "and", "or", "function"};
+ofstream output;
 
 size_t convertToIndex(char c)
 {
@@ -58,7 +59,7 @@ void processAlpha(char c)
 
 void finishSeparator(char c)
 {
-    cout << "SEPARATOR          =             " << currentStr << endl;
+    output << "SEPARATOR          =             " << currentStr << endl;
     currentState = 0;
     currentStr = "";
 }
@@ -67,9 +68,9 @@ void finishAlpha(char c)
 {
     vector<string>::iterator it = find(keywords.begin(), keywords.end(), currentStr);
     if (it != keywords.end())
-        cout << "KEYWORD            =             " << currentStr << endl;
+        output << "KEYWORD            =             " << currentStr << endl;
     else
-        cout << "IDENTIFIER         =             " << currentStr << endl;
+        output << "IDENTIFIER         =             " << currentStr << endl;
     currentState = 0;
     currentStr = "";
     if (convertToIndex(c) == 4)
@@ -91,7 +92,7 @@ void processFloat(char c)
 
 void finishInt(char c)
 {
-    cout << "INT LITERAL        =             " << currentStr << endl;
+    output << "INT LITERAL        =             " << currentStr << endl;
     currentState = 0;
     currentStr = "";
     if (convertToIndex(c) == 4)
@@ -103,7 +104,7 @@ void finishInt(char c)
 
 void finishFloat(char c)
 {
-    cout << "FLOAT LITERAL      =             " << currentStr << endl;
+    output << "FLOAT LITERAL      =             " << currentStr << endl;
     currentState = 0;
     currentStr = "";
     if (convertToIndex(c) == 4)
@@ -120,7 +121,7 @@ void processOperator(char c)
 
 void finishOperator(char c)
 {
-    cout << "OPERATOR           =             " << currentStr << endl;
+    output << "OPERATOR           =             " << currentStr << endl;
     currentState = 0;
     currentStr = "";
 }
@@ -134,7 +135,7 @@ void processSeparator(char c)
 void error(char c)
 {
     currentStr = "";
-    cout << "ENCOUNTERED ERROR IN STATE " << currentState 
+    output << "ENCOUNTERED ERROR IN STATE " << currentState 
          << " WHILE PROCESSING '" << c << "'" << endl;
 }
 
@@ -168,14 +169,15 @@ void handleCurrentChar(char c)
              break;
     case 13: 
              break;
-    default: cout << "INVALID CASE. CHAR=" << c << "\n";
+    default: output << "INVALID CASE. CHAR=" << c << "\n";
              break;
     }
 }
 
 void processFile(string fileName)
 {
-    cout << "\n\nTOKENS                          LEXEMES\n\n";
+    output.open("output.txt");
+    output << "\n\nTOKENS                          LEXEMES\n\n";
     ofstream o;
     o.open(fileName, ios_base::app);
     o << " ";
@@ -190,4 +192,7 @@ void processFile(string fileName)
         handleCurrentChar(c);
     }
     in.close();
+    output.close();
+
+    system("cat output.txt");
 }
