@@ -8,8 +8,8 @@
 using namespace std;
 
 int stateTransitions[14][8] = 
-           /* Start */                        {{1,  3,  12, 9,  9,  7,  0,  13},
-           /* Process Alpha */                 {1,  1,  1,  12, 2,  12, 2,  12},
+           /* Start */                        {{1,  3,  1, 9,  9,  7,  0,  13},
+           /* Process Alpha */                 {1,  1,  1,  2,  2,  2, 2,  12},
            /* Finish Alpha */                  {0,  0,  0,  0,  0,  0,  0,  0},
            /* Process Int */                   {12, 3,  12, 4,  5,  12, 5,  12},
            /* Process Float */                 {12, 4,  12, 12, 6,  12, 6,  12},
@@ -32,7 +32,7 @@ ofstream output;
 
 size_t convertToIndex(char c)
 {
-    if (isalpha(c))
+    if (isalpha(c) || c == '_')
         return 0;
     if (isdigit(c))
         return 1;
@@ -41,7 +41,8 @@ size_t convertToIndex(char c)
     if (c == '.')
         return 3;
     if (c == '\'' || c == '(' || c == ')' || c == '{' || c == '}' || c == '[' 
-        || c == ']' || c == ',' || c == ':' || c == ';' || c == '.')
+        || c == ']' || c == ',' || c == ':' || c == ';' || c == '.' || c == '#'
+        || c == '"' || c == '\\' || c == '|')
         return 4;
     if (c == '*' || c == '+' || c == '-' || c == '=' || c == '/' || c == '>' 
        || c == '<' || c == '>' || c == '%')
@@ -66,6 +67,13 @@ void finishSeparator(char c)
     currentStr = "";
 }
 
+void finishOperator(char c)
+{
+    output << "OPERATOR           =             " << currentStr << endl;
+    currentState = 0;
+    currentStr = "";
+}
+
 void finishAlpha(char c)
 {
     vector<string>::iterator it = find(keywords.begin(), keywords.end(), currentStr);
@@ -75,10 +83,15 @@ void finishAlpha(char c)
         output << "IDENTIFIER         =             " << currentStr << endl;
     currentState = 0;
     currentStr = "";
-    if (convertToIndex(c) == 4)
+    if (convertToIndex(c) == 4 || convertToIndex(c) == 3)
     {
         currentStr += c;
         finishSeparator(c);
+    }
+    if (convertToIndex(c) == 5)
+    {
+        currentStr += c;
+        finishOperator(c);
     }
 }
 
@@ -102,6 +115,11 @@ void finishInt(char c)
         currentStr += c;
         finishSeparator(c);
     }
+    if (convertToIndex(c) == 5)
+    {
+        currentStr += c;
+        finishOperator(c);
+    }
 }
 
 void finishFloat(char c)
@@ -114,18 +132,17 @@ void finishFloat(char c)
         currentStr += c;
         finishSeparator(c);
     }
+    if (convertToIndex(c) == 5)
+    {
+        currentStr += c;
+        finishOperator(c);
+    }
 }
 
 void processOperator(char c)
 {
-    currentStr += c;
-}
-
-void finishOperator(char c)
-{
-    output << "OPERATOR           =             " << currentStr << endl;
-    currentState = 0;
-    currentStr = "";
+    currentStr = c;
+    finishOperator(c);
 }
 
 void processSeparator(char c)
