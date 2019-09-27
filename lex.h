@@ -50,6 +50,8 @@ size_t convertToIndex(char c)
         return 6;
     if (c == '!')
         return 7;
+    output << "INDEXING ERROR\n";
+    return -1;
 };
 
 void processAlpha(char c)
