@@ -7,28 +7,34 @@
 #include <algorithm>
 using namespace std;
 
-int stateTransitions[14][8] = 
-           /* Start */                        {{1,  3,  1, 9,  9,  7,  0,  13},
-           /* Process Alpha */                 {1,  1,  1,  2,  2,  2, 2,  12},
-           /* Finish Alpha */                  {0,  0,  0,  0,  0,  0,  0,  0},
-           /* Process Int */                   {12, 3,  12, 4,  5,  12, 5,  12},
-           /* Process Float */                 {12, 4,  12, 12, 6,  12, 6,  12},
-           /* Finish Int */                    {0,  0,  0,  0,  0,  0,  0,  0 },
-           /* Finish Float */                  {0,  0,  0,  0,  0,  0,  0,  0 },
-           /* Process Operator */              {12, 12, 12, 12, 12, 12, 8,  12},
-           /* Finish Operator */               {0,  0,  0,  0,  0,  0,  0,  0 },
-           /* Process Separator */             {12, 12, 12, 12, 12, 12, 11, 12},
-           /* Finish Separator */              {0,  0,  0,  0,  0,  0,  0,  0 },
-           /* Error */                         {0,  0,  0,  0,  0,  0,  0,  0 },
-           /* End */                           {12, 12, 12, 12, 12, 12, 0,  12},
-           /* Comment */                       {13, 13, 13, 13, 13, 13, 13, 0 }};
+int stateTransitions[17][10] = 
+           /* 00 Start */                        {{1,  3,  1,  9,  9,  7,  0,  13, 14, 7 },
+           /* 01 Process Alpha */                 {1,  1,  1,  2,  2,  2,  2,  12, 2,  2 },
+           /* 02 Finish Alpha */                  {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+           /* 03 Process Int */                   {12, 3,  12, 4,  5,  12, 5,  12, 12, 12},
+           /* 04 Process Float */                 {12, 4,  12, 12, 6,  12, 6,  12, 12, 12},
+           /* 05 Finish Int */                    {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+           /* 06 Finish Float */                  {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+           /* 07 Process Operator */              {12, 12, 12, 12, 12, 12, 8,  12, 8,  12},
+           /* 08 Finish Operator */               {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+           /* 09 Process Separator */             {12, 12, 12, 12, 12, 12, 11, 12, 12, 12},
+           /* 10 Finish Separator */              {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+           /* 11 End */                           {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+           /* 12 Error */                         {12, 12, 12, 12, 12, 12, 0,  12, 12, 12},
+           /* 13 Comment */                       {2, 2, 2, 2, 2, 2, 2, 2,  2, 2},
+                                                  {7, 7, 7, 7, 7, 7, 7, 7, 7, 15},
+                                                  {15, 15, 15, 15, 15, 15, 15, 15, 15, 16},
+                                                  {15, 15, 15, 15, 15, 15, 15, 15, 0, 15}};
 
 string currentStr = "";
 size_t currentState = 0;
 vector<string> keywords = {"int", "float", "bool", "if", "else", "then", "endif", 
                            "while", "whileend", "do", "doend", "for", "forend", 
-                           "input", "output", "and", "or", "function"};
+                           "input", "output", "and", "or", "function", "include",
+                           "sstring", "fstream", "string", "vector", "using", 
+                           "return"};
 ofstream output;
+ifstream in;
 
 size_t convertToIndex(char c)
 {
@@ -41,16 +47,19 @@ size_t convertToIndex(char c)
     if (c == '.')
         return 3;
     if (c == '\'' || c == '(' || c == ')' || c == '{' || c == '}' || c == '[' 
-        || c == ']' || c == ',' || c == ':' || c == ';' || c == '.' || c == '#'
-        || c == '"' || c == '\\' || c == '|')
+        || c == ']' || c == ',' || c == ':' || c == ';' || c == '"' || c == '\\' || c == '|')
         return 4;
-    if (c == '*' || c == '+' || c == '-' || c == '=' || c == '/' || c == '>' 
-       || c == '<' || c == '>' || c == '%')
+    if (c == '+' || c == '-' || c == '=' || c == '>' 
+       || c == '<' || c == '>' || c == '%' || c== '#')
         return 5;
     if (c == ' ' || c == '\n' || c == '\t')
         return 6;
     if (c == '!')
         return 7;
+    if (c == '/')
+        return 8;
+    if (c == '*')
+        return 9;
     output << "INDEXING ERROR\n";
     return -1;
 };
@@ -142,6 +151,10 @@ void finishFloat(char c)
 void processOperator(char c)
 {
     currentStr = c;
+    if (in.peek() == c)
+    {
+        currentStr += in.get();
+    }
     finishOperator(c);
 }
 
@@ -160,6 +173,7 @@ void error(char c)
 
 void handleCurrentChar(char c)
 {
+    char next;
     size_t ind = convertToIndex(c);
     switch(currentState)
     {
@@ -188,7 +202,25 @@ void handleCurrentChar(char c)
              break;
     case 13: 
              break;
-    default: output << "INVALID CASE. CHAR=" << c << "\n";
+    case 14: {
+             if (in.peek() == '*')
+             {
+                 currentState = 15;
+             }
+             else
+             {
+                 processOperator(c);
+             }
+             break;}
+    case 15: break;
+    case 16: 
+             if (in.peek() == '/')
+             {
+                 in.get();
+                 currentState = 0;
+             }
+             break;
+    default: output << "INVALID CASE. CHAR=" << c << " in state " << currentState << "\n";
              break;
     }
 }
@@ -201,7 +233,6 @@ void processFile(string fileName)
     o.open(fileName, ios_base::app);
     o << " ";
     o.close();
-    ifstream in;
     in.open(fileName);
     char c;
     while (in.get(c))
