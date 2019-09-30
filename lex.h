@@ -15,7 +15,7 @@ int stateTransitions[17][10] =
            /* 04 Process Float */                 {12, 4,  12, 12, 6,  12, 6,  12, 12, 12},
            /* 05 Finish Int */                    {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
            /* 06 Finish Float */                  {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
-           /* 07 Process Operator */              {12, 12, 12, 12, 12, 12, 8,  12, 8,  12},
+           /* 07 Process Operator */              {12, 12, 12, 12, 12, 8,  8,  12, 8,  12},
            /* 08 Finish Operator */               {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
            /* 09 Process Separator */             {12, 12, 12, 12, 12, 12, 11, 12, 12, 12},
            /* 10 Finish Separator */              {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
@@ -151,9 +151,25 @@ void finishFloat(char c)
 void processOperator(char c)
 {
     currentStr = c;
-    if (in.peek() == c)
+    char next = in.peek();
+    if (c == '+')
     {
-        currentStr += in.get();
+        if (next == '=' || next == '+')
+        {
+            currentStr += in.get();
+        }
+    }
+    else if (c == '-')
+    {
+        if (next == '=' || next == '-')
+            currentStr += in.get();
+    }
+    else if (c == '>' || c == '<' || c == '=')
+    {
+        if (next == c)
+        {
+            currentStr += in.get();
+        }
     }
     finishOperator(c);
 }
