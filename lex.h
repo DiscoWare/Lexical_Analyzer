@@ -7,24 +7,26 @@
 #include <algorithm>
 using namespace std;
 
-int stateTransitions[17][10] = 
-           /* 00 Start */                        {{1,  3,  1,  9,  9,  7,  0,  13, 14, 7 },
-           /* 01 Process Alpha */                 {1,  1,  1,  2,  2,  2,  2,  12, 2,  2 },
-           /* 02 Finish Alpha */                  {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
-           /* 03 Process Int */                   {12, 3,  12, 4,  5,  12, 5,  12, 12, 12},
-           /* 04 Process Float */                 {12, 4,  12, 12, 6,  12, 6,  12, 12, 12},
-           /* 05 Finish Int */                    {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
-           /* 06 Finish Float */                  {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
-           /* 07 Process Operator */              {12, 12, 12, 12, 12, 8,  8,  12, 8,  12},
-           /* 08 Finish Operator */               {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
-           /* 09 Process Separator */             {12, 12, 12, 12, 12, 12, 11, 12, 12, 12},
-           /* 10 Finish Separator */              {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
-           /* 11 End */                           {0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+int stateTransitions[19][11] = 
+           /* 00 Start */                        {{1,  3,  1,  9,  9,  7,  0,  13, 14, 7, 17 },
+           /* 01 Process Alpha */                 {1,  1,  1,  2,  2,  2,  2,  12, 2,  2, 12 },
+           /* 02 Finish Alpha */                  {0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0 },
+           /* 03 Process Int */                   {12, 3,  12, 4,  5,  12, 5,  12, 12, 12, 12},
+           /* 04 Process Float */                 {12, 4,  12, 12, 6,  12, 6,  12, 12, 12, 12},
+           /* 05 Finish Int */                    {0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0 },
+           /* 06 Finish Float */                  {0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0 },
+           /* 07 Process Operator */              {12, 12, 12, 12, 12, 8,  8,  12, 8,  12, 12},
+           /* 08 Finish Operator */               {0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0 },
+           /* 09 Process Separator */             {12, 12, 12, 12, 12, 12, 11, 12, 12, 12, 12},
+           /* 10 Finish Separator */              {0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0 },
+           /* 11 End */                           {0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0 },
            /* 12 Error */                         {12, 12, 12, 12, 12, 12, 0,  12, 12, 12},
-           /* 13 Comment */                       {2, 2,   2,  2,  2,  2,  2,  2,  2,  2 },
+           /* 13 Process Exclamation */           {2, 2,   2,  2,  2,  8,  2,  2,  2,  2 },
            /* 14 Start c Comment */               {7, 7,   7,  7,  7,  7,  7,  7,  7,  15},
            /* 15 Process c Comment */             {15, 15, 15, 15, 15, 15, 15, 15, 15, 16},
-           /* 16 Finish c Comment */              {15, 15, 15, 15, 15, 15, 15, 15, 0,  15}};
+           /* 16 Finish c Comment */              {15, 15, 15, 15, 15, 15, 15, 15, 0,  15},
+           /* Process str literal */              {17, 17, 17, 17, 17, 17, 17, 17, 17, 18, 18},
+           /* Finish str literal */               {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
 string currentStr = "";
 size_t currentState = 0;
@@ -32,7 +34,7 @@ vector<string> keywords = {"int", "float", "bool", "if", "else", "then", "endif"
                            "while", "whileend", "do", "doend", "for", "forend", 
                            "input", "output", "and", "or", "function", "include",
                            "sstring", "fstream", "string", "vector", "using", 
-                           "return"};
+                           "return", "size_t", "cout"};
 ofstream output;
 ifstream in;
 
@@ -47,10 +49,10 @@ size_t convertToIndex(char c)
     if (c == '.')
         return 3;
     if (c == '\'' || c == '(' || c == ')' || c == '{' || c == '}' || c == '[' 
-        || c == ']' || c == ',' || c == ':' || c == ';' || c == '"' || c == '\\' || c == '|')
+        || c == ']' || c == ',' || c == ':' || c == ';' || c == '\\')
         return 4;
-    if (c == '+' || c == '-' || c == '=' || c == '>' 
-       || c == '<' || c == '>' || c == '%' || c== '#')
+    if (c == '+' || c == '-' || c == '=' || c == '>' || c == '|'
+        || c == '<' || c == '>' || c == '%' || c== '#')
         return 5;
     if (c == ' ' || c == '\n' || c == '\t')
         return 6;
@@ -60,6 +62,8 @@ size_t convertToIndex(char c)
         return 8;
     if (c == '*')
         return 9;
+    if (c == '"')
+        return 10;
     output << "INDEXING ERROR\n";
     return -1;
 };
@@ -83,6 +87,32 @@ void finishOperator(char c)
     currentStr = "";
 }
 
+void processOperator(char c)
+{
+    currentStr = c;
+    char next = in.peek();
+    if (c == '+')
+    {
+        if (next == '=' || next == '+')
+        {
+            currentStr += in.get();
+        }
+    }
+    else if (c == '-')
+    {
+        if (next == '=' || next == '-')
+            currentStr += in.get();
+    }
+    else if (c == '>' || c == '<' || c == '=' || c == '|')
+    {
+        if (next == c)
+        {
+            currentStr += in.get();
+        }
+    }
+    finishOperator(c);
+}
+
 void finishAlpha(char c)
 {
     vector<string>::iterator it = find(keywords.begin(), keywords.end(), currentStr);
@@ -100,7 +130,7 @@ void finishAlpha(char c)
     if (convertToIndex(c) == 5)
     {
         currentStr += c;
-        finishOperator(c);
+        processOperator(c);
     }
 }
 
@@ -116,7 +146,7 @@ void processFloat(char c)
 
 void finishInt(char c)
 {
-    output << "INT LITERAL        =             " << currentStr << endl;
+    output << "INT                =             " << currentStr << endl;
     currentState = 0;
     currentStr = "";
     if (convertToIndex(c) == 4)
@@ -133,7 +163,7 @@ void finishInt(char c)
 
 void finishFloat(char c)
 {
-    output << "FLOAT LITERAL      =             " << currentStr << endl;
+    output << "REAL               =             " << currentStr << endl;
     currentState = 0;
     currentStr = "";
     if (convertToIndex(c) == 4)
@@ -148,30 +178,17 @@ void finishFloat(char c)
     }
 }
 
-void processOperator(char c)
+
+
+void processExclamation(char c)
 {
-    currentStr = c;
     char next = in.peek();
-    if (c == '+')
+    if (next == '=')
     {
-        if (next == '=' || next == '+')
-        {
-            currentStr += in.get();
-        }
+        currentStr = "!=";
+        in.get();
+        finishOperator(c);
     }
-    else if (c == '-')
-    {
-        if (next == '=' || next == '-')
-            currentStr += in.get();
-    }
-    else if (c == '>' || c == '<' || c == '=')
-    {
-        if (next == c)
-        {
-            currentStr += in.get();
-        }
-    }
-    finishOperator(c);
 }
 
 void processSeparator(char c)
@@ -185,6 +202,19 @@ void error(char c)
     currentStr = "";
     output << "ENCOUNTERED ERROR IN STATE " << currentState 
          << " WHILE PROCESSING '" << c << "'" << endl;
+}
+
+void processStringLiteral(char c)
+{
+    currentStr += c;
+}
+
+void finishStringLiteral(char c)
+{
+    currentStr += c;
+    output << "STRING LITERAL     =             " << currentStr << endl;
+    currentState = 0;
+    currentStr = "";
 }
 
 void handleCurrentChar(char c)
@@ -217,6 +247,7 @@ void handleCurrentChar(char c)
     case 12: error(c);
              break;
     case 13: 
+             processExclamation(c);
              break;
     case 14: {
              if (in.peek() == '*')
@@ -235,6 +266,12 @@ void handleCurrentChar(char c)
                  in.get();
                  currentState = 0;
              }
+             break;
+    case 17:
+             processStringLiteral(c);
+             break;
+    case 18:
+             finishStringLiteral(c);
              break;
     default: output << "INVALID CASE. CHAR=" << c << " in state " << currentState << "\n";
              break;
