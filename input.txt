@@ -9,7 +9,7 @@ int main()
     string message = "Hello World!\n"
     cout << message << endl;
     int a = 4;
-    int b = 5.0;
-    int c = a + b;
+    float b = 5.0;
+    float c = a + b;
     return 0;
 }          
