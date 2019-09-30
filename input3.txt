@@ -1,0 +1,12 @@
+#include <iostream>
+using namespace std;
+
+/* This is a comment and should not be
+   included in the lexer output */
+
+int main()
+{
+    string message = "Hello World!\n"
+    cout << message << endl;
+    return 0;
+}      
